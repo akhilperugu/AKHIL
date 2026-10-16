@@ -5,7 +5,7 @@ LabelLens AI reviews the text visible in a packaged-food label photo, compares i
 ## What it does
 
 - Upload JPEG, PNG, or WebP photos up to the configured limit, with drag-and-drop, preview, replacement, and removal.
-- Send images from the backend to a configurable OpenAI vision model using the Responses API. The browser never receives the provider key.
+- Send images from the backend to a configurable xAI Grok vision model using the Responses API. The browser never receives the provider key.
 - Validate structured extraction with Pydantic, keep exact source wording, and require nutrition values and units to be supported by their quoted label text before comparison. Unsupported fields are marked unknown or partially readable instead of being presented as confirmed.
 - Assess image readability and flag visible issues such as blur, glare, curved packaging, obstruction, cropping, and perspective distortion. Uncertain fields remain unresolved rather than being completed from context.
 - Compare allergens, curated ingredient synonyms, precautionary cross-contact wording, dietary-pattern uncertainty, and nutrition thresholds with matching units and serving bases.
@@ -16,7 +16,7 @@ LabelLens AI reviews the text visible in a packaged-food label photo, compares i
 
 - Python 3.11 or newer.
 - Node.js 20 or newer and npm.
-- An OpenAI API key and an image-capable model that supports the Responses API and JSON output for live analysis. Model choice is configured, not hardcoded.
+- An xAI API key for live analysis. The default model is `grok-4.7`; choose a model available to your xAI account that supports image input and JSON output.
 
 The app can run without provider credentials. The backend health endpoint then reports `configuration_required`, and image analysis returns a clear configuration error rather than sample results. Frontend and deterministic comparison tests use mocked provider output and do not need paid API access.
 
@@ -36,8 +36,8 @@ Copy-Item .env.example .env
 Edit `backend/.env` and set the provider values:
 
 ```dotenv
-OPENAI_API_KEY=your-server-side-key
-OPENAI_VISION_MODEL=your-supported-vision-model
+XAI_API_KEY=your-server-side-key
+XAI_VISION_MODEL=grok-4.7
 MAX_UPLOAD_MB=10
 FRONTEND_ORIGIN=http://localhost:5173
 REQUESTS_PER_MINUTE=12
@@ -107,13 +107,13 @@ The backend serves the OpenAPI page at `/docs` during local development.
 
 ## Configuration and provider changes
 
-- `OPENAI_API_KEY`: server-side provider credential.
-- `OPENAI_VISION_MODEL`: model name for the configured vision endpoint; select a model whose current documentation confirms image input and JSON output support.
+- `XAI_API_KEY`: server-side xAI credential. Never expose it to the frontend.
+- `XAI_VISION_MODEL`: model name for the xAI endpoint (default `grok-4.7`); select a model whose current documentation confirms image input and JSON output support.
 - `MAX_UPLOAD_MB`: upload size ceiling (default 10 MB).
 - `FRONTEND_ORIGIN`: allowed browser origin (default `http://localhost:5173`). Set this to the deployed frontend origin in production.
 - `REQUESTS_PER_MINUTE`: per-client in-memory safeguard for image analysis (default 12).
 
-Provider calls live in `backend/app/services/vision_provider.py`; replace that adapter to use another authorized provider while preserving the `LabelData` validation contract. Never put credentials in frontend variables or source control. For production, terminate TLS, configure an explicit frontend origin, use a shared rate limiter, and review provider retention terms.
+Provider calls live in `backend/app/services/vision_provider.py`; the OpenAI-compatible Python client is configured for xAI's `https://api.x.ai/v1` API. Preserve the `LabelData` validation contract when changing providers. Never put credentials in frontend variables or source control. For production, terminate TLS, configure an explicit frontend origin, use a shared rate limiter, and review provider retention terms.
 
 ## Privacy, limitations, and safety
 

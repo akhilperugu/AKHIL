@@ -36,7 +36,7 @@ async def simple_rate_limit(request: Request, call_next):
 
 @app.get("/api/health", response_model=HealthResponse)
 def health():
-    configured = bool(settings.openai_api_key and settings.vision_model)
+    configured = bool(settings.xai_api_key and settings.vision_model)
     return HealthResponse(status="ready" if configured else "configuration_required", provider_configured=configured, max_upload_mb=settings.max_upload_mb)
 
 

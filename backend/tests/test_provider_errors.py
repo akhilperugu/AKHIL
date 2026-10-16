@@ -12,7 +12,7 @@ class FakeClient:
     last_request = None
 
     def __init__(self, **_kwargs):
-        del _kwargs
+        type(self).client_options = _kwargs
         self.responses = self
 
     def create(self, **kwargs):
@@ -24,10 +24,11 @@ class FakeClient:
 
 def configure_provider(monkeypatch, output_text):
     monkeypatch.setattr("app.services.vision_provider.OpenAI", FakeClient)
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setenv("OPENAI_VISION_MODEL", "test-vision-model")
+    monkeypatch.setenv("XAI_API_KEY", "test-key")
+    monkeypatch.setenv("XAI_VISION_MODEL", "test-vision-model")
     FakeClient.output_text = output_text
     FakeClient.last_request = None
+    FakeClient.client_options = None
 
 
 def test_provider_failure_does_not_return_empty_clean_label(monkeypatch):
@@ -58,8 +59,10 @@ def test_provider_assesses_image_quality_and_preserves_uncertain_visible_text(mo
     ))
 
     label = VisionProvider().extract(b"image", "image/jpeg")
-    prompt = FakeClient.last_request["input"][0]["content"][0]["text"]
+    prompt = FakeClient.last_request["input"][0]["content"]
 
+    assert FakeClient.client_options["base_url"] == "https://api.x.ai/v1"
+    assert FakeClient.client_options["api_key"] == "test-key"
     assert label.image_quality.value == "limited"
     assert [issue.value for issue in label.image_issues] == ["curved_surface", "blurry"]
     assert label.ingredients[0].source_text == "Milk powd…"
