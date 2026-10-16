@@ -1,6 +1,6 @@
 import base64
 import json
-from openai import AuthenticationError, OpenAI
+from openai import APIStatusError, OpenAI
 from app.core.config import get_settings
 from app.schemas.label import LabelData
 
@@ -44,7 +44,9 @@ class VisionProvider:
                 raise ValueError("Provider returned no structured output")
             parsed = json.loads(output)
             return LabelData.model_validate(parsed)
-        except AuthenticationError:
-            raise ProviderConfigurationError("xAI rejected XAI_API_KEY. Add a valid xAI API key to backend/.env and restart the backend.") from None
+        except APIStatusError as exc:
+            if exc.status_code in {400, 401, 403}:
+                raise ProviderConfigurationError("xAI rejected the key or request configuration. Verify XAI_API_KEY and XAI_VISION_MODEL in backend/.env.") from None
+            raise ProviderAnalysisError("The vision provider could not analyze this image. Please retry or use a clearer label photo.") from exc
         except Exception as exc:
             raise ProviderAnalysisError("The vision provider could not analyze this image. Please retry or use a clearer label photo.") from exc
